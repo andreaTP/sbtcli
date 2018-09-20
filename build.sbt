@@ -29,3 +29,5 @@ run := {
   import scala.sys.process._
   "./run.sh" !
 }
+
+scalafmtOnCompile in ThisBuild := true
