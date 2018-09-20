@@ -1,0 +1,12 @@
+{
+  "name" : "sbtcli-poc",
+  "version" : "0.0.2",
+  "description": "A Node CLI for SBT",
+  "bin": {
+    "sbtcli": "./bin/sbtcli"
+  },
+  "scripts": {
+    "build": "sbt deploy",
+    "prepublish": "sbt deploy"
+  }
+}

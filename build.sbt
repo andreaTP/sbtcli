@@ -24,10 +24,13 @@ libraryDependencies ++= Seq(
   "com.definitelyscala" %%% "scala-js-node" % "1.0.1",
 )
 
-run := {
-  (fastOptJS in Compile).value
-  import scala.sys.process._
-  "./run.sh" !
-}
-
 scalafmtOnCompile in ThisBuild := true
+
+val deploy = taskKey[Unit]("Deploy the CLI")
+
+deploy := {
+  val opt = (fullOptJS in Compile).value.data
+  val target = baseDirectory.value / "lib" / "sbtcli.js"
+
+  IO.copy(Seq((opt -> target)), CopyOptions(true, false, false))
+}

@@ -80,7 +80,33 @@ class SocketClient(
         val content = json.params
         SbtLogger.log(content.message.toString, content.`type`.toString.toInt)
       case "textDocument/publishDiagnostics" =>
-        println(s"To be done \n ${js.JSON.stringify(json)}")
+        val diags = json.params.diagnostics.asInstanceOf[js.Array[js.Dynamic]]
+        val fileUri =
+          if (diags.size > 0) {
+            new java.net.URI(json.params.uri.toString())
+          } else null
+        for {
+          diag <- diags
+        } yield {
+          val message = diag.message.toString
+          val severity = diag.severity.asInstanceOf[Int]
+
+          val startLine = diag.range.start.line.asInstanceOf[Int] + 1
+          // val endLine = diag.range.end.line.asInstanceOf[Int] + 1
+
+          val colStart = diag.range.start.character.asInstanceOf[Int] + 1
+          // val colEnd = diag.range.start.character.asInstanceOf[Int] + 1
+
+          val logSource =
+            wvlet.log.LogSource(
+              path = "DEBUG",
+              fileName = fileUri.getPath(),
+              line = startLine,
+              col = colStart
+            )
+
+          CodeLogger.log(message, severity, logSource)
+        }
     }
   }
 

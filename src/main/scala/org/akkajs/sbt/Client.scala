@@ -6,35 +6,42 @@ import scala.concurrent.{Future, Promise}
 import scala.concurrent.ExecutionContext.Implicits.{global => ec}
 
 import com.definitelyscala.node.Node
-import com.definitelyscala.node
 
 object SbtCli extends App {
 
   // Env variable to set the logging level of the CLI
   val LogLevelEnvVar = "SBTCLI_LOGLEVEL"
+  val defaultLogLevel = wvlet.log.LogLevel("info")
   val logLevel = try {
-    val ll = Node.process.env.selectDynamic(LogLevelEnvVar)
-    wvlet.log.LogLevel(ll)
+    val ll =
+      Node.process.env
+        .asInstanceOf[js.Dynamic]
+        .selectDynamic(LogLevelEnvVar)
+
+    if (!js.isUndefined(ll))
+      wvlet.log.LogLevel(ll.toString)
+    else
+      defaultLogLevel
   } catch {
-    case _: Throwable =>
-      wvlet.log.LogLevel("info")
+    case _: Throwable => defaultLogLevel
   }
 
   CliLogger.logger.setLogLevel(logLevel)
   SbtLogger.logger.setLogLevel(logLevel)
   CodeLogger.logger.setLogLevel(logLevel)
 
-  val argv = node.Node.process.argv
+  val argv = Node.process.argv
   CliLogger.logger.trace(s"Starting CLI with argv: $argv")
 
   if (argv.length <= 2) {
     // Interactive CLI
 
+    // Typed interface is out-of-sync with github version and not working... :-S
     val readline = js.Dynamic.global.require("readline")
     val rl = readline.createInterface(
       js.Dynamic.literal(
-        "input" -> node.Node.process.stdin,
-        "output" -> node.Node.process.stdout,
+        "input" -> Node.process.stdin,
+        "output" -> Node.process.stdout,
         "prompt" -> ">+> "
       ))
 
@@ -48,7 +55,7 @@ object SbtCli extends App {
           val originalCmd = line.toString()
           if (originalCmd.trim == "exit") {
             rl.close()
-            node.Node.process.exit(0)
+            Node.process.exit(0)
           }
           val cmd = {
             if (originalCmd == "shutdown") "exit"
@@ -70,26 +77,30 @@ object SbtCli extends App {
     argv.remove(0) // remove init script call
     for {
       sbtClient <- init()
-      result <- sbtClient.send(ExecCommand(cmd))
     } yield {
-      for {str <- argv} yield {
-        val cmd = {
-          if (str == "shutdown") "exit"
-          else str
-        }
-        CliLogger.logger.info(s"Executing command: $cmd")
-        for {
-          result <- sbtClient.send(ExecCommand(cmd))
-        } yield {
-          result.print()
-        }
+      val commands =
+        (for { str <- argv } yield {
+          val cmd = {
+            if (str == "shutdown") "exit"
+            else str
+          }
+          CliLogger.logger.info(s"Executing command: $cmd")
+          for {
+            result <- sbtClient.send(ExecCommand(cmd))
+          } yield {
+            result.print()
+          }
+        })
+      for {
+        _ <- Future.sequence(commands.toSeq)
+      } yield {
+        Node.process.exit(0)
       }
-      node.Node.process.exit(0)
     }
   }
 
   def init(): Future[SocketClient] = {
-    val baseDir = node.Node.process.cwd()
+    val baseDir = Node.process.cwd()
     val portfile = s"$baseDir/project/target/active.json"
 
     for {
@@ -99,7 +110,7 @@ object SbtCli extends App {
       val sbtClient = {
         sock.on("error", () => {
           CliLogger.logger.error("Sbt server stopped.")
-          node.Node.process.exit(-1)
+          Node.process.exit(-1)
         })
         new SocketClient(sock)
       }
