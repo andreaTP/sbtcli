@@ -36,6 +36,8 @@ val prelude = """'use strict';
                  |global.readline = require('readline');
                  |""".stripMargin
 
+val require = "require('../lib/sbtcli.js');"
+
 val deploy = taskKey[Unit]("Deploy the CLI")
 
 deploy := {
@@ -64,6 +66,6 @@ val writeBin = taskKey[Unit]("Write executable bin file")
 writeBin := {
   val binFile = baseDirectory.value / "bin" / "sbtcli"
 
-  IO.write(binFile, s"$shebang\n$prelude")
+  IO.write(binFile, s"$shebang\n$prelude\n$require")
   IO.chmod("rwxr-xr-x", binFile)
 }
