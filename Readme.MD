@@ -6,9 +6,13 @@ Feel free to start using it at and report any bug, feature request, please note 
 
 ## Install
 
+If you have already __npm__ installed in your machine:
 ```bash
 npm install -g sbtcli-poc
 ```
+
+Or you can download your (alpha) architecture specific binary from the releases:
+https://github.com/andreaTP/sbtcli/releases
 
 ## How to use
 
