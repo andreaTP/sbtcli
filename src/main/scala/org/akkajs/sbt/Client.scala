@@ -33,6 +33,13 @@ object SbtCli extends App {
   val argv = Node.process.argv
   CliLogger.logger.trace(s"Starting CLI with argv: $argv")
 
+  /*Temporary location for this function ... */
+  // TODO: completener to be completed
+  // val completerFunction: js.Function1[String, js.Array[_]] = (line) => {
+  //   val completions = js.Array[String]("...")
+  //   js.Array(completions, line)
+  // }
+
   if (argv.length <= 2) {
     // Interactive CLI
 
@@ -42,6 +49,7 @@ object SbtCli extends App {
       js.Dynamic.literal(
         "input" -> Node.process.stdin,
         "output" -> Node.process.stdout,
+        // "completer" -> completerFunction,
         "prompt" -> ">+> "
       ))
 
@@ -70,7 +78,6 @@ object SbtCli extends App {
           }
         )
         .on("close", () => {
-          println("Close called!!! ")
           Node.process.exit(0)
         })
     }

@@ -2,11 +2,25 @@
   "name" : "sbtcli-poc",
   "version" : "0.0.2",
   "description": "A Node CLI for SBT",
+  "main": "./lib/sbtcli.js",
   "bin": {
     "sbtcli": "./bin/sbtcli"
   },
   "scripts": {
     "build": "sbt deploy",
     "prepublish": "sbt deploy"
+  },
+  "keywords": [
+    "scala",
+    "sbt",
+    "cli",
+    "sbtcli"
+  ],
+  "author": "Andrea Peruffo",
+  "license": "MIT",
+  "homepage": "https://gitlab.com/andreaTP/sbtcli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/andreaTP/sbtcli.git"
   }
 }
