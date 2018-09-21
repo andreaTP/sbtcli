@@ -49,10 +49,10 @@ sealed trait Event {
 
 final case class Result(json: js.Dynamic) extends Event {
   def print(): Unit = {
-    if (json.result != null) {
+    if (!js.isUndefined(json.result)) {
       CliLogger.logger.info("completed")
     } else {
-      CliLogger.logger.error("completed with errors")
+      CliLogger.logger.error("error executing command")
     }
   }
 }
