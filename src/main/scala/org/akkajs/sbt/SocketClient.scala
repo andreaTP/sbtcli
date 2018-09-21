@@ -99,7 +99,6 @@ class SocketClient(
             new java.net.URI(json.params.uri.toString())
           } else null
 
-        println(diagnosticsDone.mkString("|"))
         for {
           diag <- diags.filter(x =>
             !diagnosticsDone.contains(js.JSON.stringify(x)))
