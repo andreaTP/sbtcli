@@ -50,25 +50,29 @@ object SbtCli extends App {
     } {
       rl.prompt(true)
       rl.on(
-        "line",
-        (line: js.Dynamic) => {
-          val originalCmd = line.toString()
-          if (originalCmd.trim == "exit") {
-            rl.close()
-            Node.process.exit(0)
+          "line",
+          (line: js.Dynamic) => {
+            val originalCmd = line.toString()
+            if (originalCmd.trim == "exit") {
+              rl.close()
+              Node.process.exit(0)
+            }
+            val cmd = {
+              if (originalCmd == "shutdown") "exit"
+              else originalCmd
+            }
+            for {
+              result <- sbtClient.send(ExecCommand(cmd))
+            } yield {
+              result.print()
+              rl.prompt(true)
+            }
           }
-          val cmd = {
-            if (originalCmd == "shutdown") "exit"
-            else originalCmd
-          }
-          for {
-            result <- sbtClient.send(ExecCommand(cmd))
-          } yield {
-            result.print()
-            rl.prompt(true)
-          }
-        }
-      )
+        )
+        .on("close", () => {
+          println("Close called!!! ")
+          Node.process.exit(0)
+        })
     }
   } else {
     // Command line arguments

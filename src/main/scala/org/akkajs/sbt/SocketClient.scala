@@ -6,12 +6,16 @@ import scala.concurrent.ExecutionContext.Implicits.{global => ec}
 
 import scala.scalajs.js
 
+import com.definitelyscala.node.Node
 import com.definitelyscala.node.Buffer
+import com.definitelyscala.node.fs.Fs
 import com.definitelyscala.node.net.Socket
 
 class SocketClient(
     sock: Socket
 ) {
+
+  val cwd = Node.process.cwd()
 
   val inFlight = mutable.Map[String, Promise[Event]]()
 
@@ -53,26 +57,35 @@ class SocketClient(
         parseBuffer()
       } catch {
         case _: Throwable =>
-        //not yet a valid json message nothing to do
+          //not yet a valid json message
+          if (buffer != "" && !buffer.startsWith("Content-Length:")) {
+            // trailing junk to throw away
+            val start = buffer.indexOfSlice("Content-Length:")
+            buffer = buffer.substring(start, buffer.length)
+            parseBuffer()
+          }
       }
     }
   }
 
   def onMessage(msg: js.Dynamic) = {
-    // println("message: "+js.JSON.stringify(msg))
+    CliLogger.logger.trace(s"message: ${js.JSON.stringify(msg)}")
     val id = msg.id.toString
 
     inFlight.get(id) match {
       case Some(prom) =>
         inFlight -= id
+        diagnosticsDone = Seq[String]()
         prom.success(Result(msg))
       case _ if (!js.isUndefined(msg.method)) =>
         onNotification(msg)
       case _ =>
         CliLogger.logger.error(s"unmatched message from server")
-        CliLogger.logger.trace(js.JSON.stringify(msg))
+        CliLogger.logger.debug(js.JSON.stringify(msg))
     }
   }
+
+  var diagnosticsDone = Seq[String]()
 
   def onNotification(json: js.Dynamic): Unit = {
     json.method.toString match {
@@ -85,28 +98,64 @@ class SocketClient(
           if (diags.size > 0) {
             new java.net.URI(json.params.uri.toString())
           } else null
+
+        println(diagnosticsDone.mkString("|"))
         for {
-          diag <- diags
+          diag <- diags.filter(x =>
+            !diagnosticsDone.contains(js.JSON.stringify(x)))
         } yield {
           val message = diag.message.toString
           val severity = diag.severity.asInstanceOf[Int]
 
           val startLine = diag.range.start.line.asInstanceOf[Int] + 1
-          // val endLine = diag.range.end.line.asInstanceOf[Int] + 1
+          val endLine = diag.range.end.line.asInstanceOf[Int] + 1
 
           val colStart = diag.range.start.character.asInstanceOf[Int] + 1
           // val colEnd = diag.range.start.character.asInstanceOf[Int] + 1
 
           val logSource =
             wvlet.log.LogSource(
-              path = "DEBUG",
-              fileName = fileUri.getPath(),
+              path = "",
+              fileName = "." + fileUri.getPath().replace(cwd, ""),
               line = startLine,
               col = colStart
             )
 
-          CodeLogger.log(message, severity, logSource)
+          Fs.readFile(
+            fileUri.getPath(),
+            (err, data) => {
+              ErrorLogger.log(message, severity, logSource)
+              if (err == null) {
+                val lines =
+                  data
+                    .toString()
+                    .split("\n", endLine + 2)
+                    .drop(startLine - 1)
+                    .take(startLine - endLine + 1)
+
+                lines.zipWithIndex.foreach {
+                  case (line, i) =>
+                    val startCol =
+                      if (i == 0) colStart - 1
+                      else 0
+
+                    val ls = wvlet.log.LogSource(
+                      path = "",
+                      fileName = "",
+                      line = startLine + i,
+                      col = startCol
+                    )
+
+                    CodeLogger.log(line, severity, ls)
+                }
+              }
+            }
+          )
         }
+
+        diagnosticsDone = diagnosticsDone ++ diags
+          .map(js.JSON.stringify(_))
+          .toSeq
     }
   }
 

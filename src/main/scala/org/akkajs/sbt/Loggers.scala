@@ -36,7 +36,7 @@ object SbtLogger {
     logger.log(LogLevel.values(level), fakeLogSource, msg)
 }
 
-object CustomSourceCodeLogFormatter extends LogFormatter {
+object CustomErrorLogFormatter extends LogFormatter {
   import LogFormatter._
   override def formatLog(r: LogRecord): String = {
     val loc =
@@ -51,11 +51,43 @@ object CustomSourceCodeLogFormatter extends LogFormatter {
   }
 }
 
-object CodeLogger {
+object ErrorLogger {
 
   val logger = {
     val res = Logger("compiler")
-    res.setFormatter(CustomSourceCodeLogFormatter)
+    res.setFormatter(CustomErrorLogFormatter)
+    res
+  }
+
+  def log(msg: String, level: Int, logSource: LogSource) =
+    logger.log(LogLevel.values(level), logSource, msg)
+}
+
+object CustomCodeLogFormatter extends LogFormatter {
+  import LogFormatter._
+
+  override def formatLog(r: LogRecord): String = {
+    val s = r.source.get
+    val startCol = s.col
+
+    val msg = r.getMessage
+
+    val startLine = msg.take(startCol - 1)
+    val endLine = msg.drop(startCol - 1)
+
+    val log =
+      f"${withColor(Console.BLUE, s.line.toString)}:${withColor(
+        Console.WHITE,
+        startLine)}${highlightLog(r.level, endLine)}"
+    appendStackTrace(log, r)
+  }
+}
+
+object CodeLogger {
+
+  val logger = {
+    val res = Logger("")
+    res.setFormatter(CustomCodeLogFormatter)
     res
   }
 
