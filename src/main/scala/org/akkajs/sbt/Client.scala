@@ -117,7 +117,15 @@ object SbtCli extends App {
     for {
       started <- ConnectSbt.startServerIfNeeded(portfile)
       if started == true
-      sock <- ConnectSbt.connect(portfile)
+      sock <- ConnectSbt.connect(portfile).recoverWith {
+        // retry after cleaning active.jsno
+        case _ =>
+          for {
+            started <- ConnectSbt.startServerIfNeeded(portfile)
+            if started == true
+            s <- ConnectSbt.connect(portfile)
+          } yield { s }
+      }
       val sbtClient = {
         sock.on("error", () => {
           CliLogger.logger.error("Sbt server stopped.")

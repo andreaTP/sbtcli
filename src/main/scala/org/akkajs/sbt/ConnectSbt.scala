@@ -20,7 +20,7 @@ object ConnectSbt {
             "Cannot connect to socket and cannot remove current Sbt active.json file")
           Node.process.exit(-1)
         } else {
-          connect(portfile, res)
+          res.failure(new Exception("cannot connect to available port"))
         }
       }
     )
@@ -31,7 +31,7 @@ object ConnectSbt {
     Fs.readFile(
       portfile,
       (err, content) => {
-        if (err == null) {
+        try {
           val json = js.JSON.parse(content.toString())
           val uri = new java.net.URI(json.uri.toString())
 
@@ -43,8 +43,9 @@ object ConnectSbt {
           socket.on("error", (err: js.Dynamic) => {
             connectionFailure(portfile, res)
           })
-        } else {
-          connectionFailure(portfile, res)
+        } catch {
+          case _: Throwable =>
+            connectionFailure(portfile, res)
         }
       }
     )

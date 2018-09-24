@@ -19,9 +19,12 @@ scalaJSUseMainModuleInitializer := true
 
 resolvers += Resolver.jcenterRepo
 
+testFrameworks += new TestFramework("utest.runner.Framework")
+
 libraryDependencies ++= Seq(
   "org.wvlet.airframe" %%% "airframe-log" % "0.65", 
   "com.definitelyscala" %%% "scala-js-node" % "1.0.1",
+  "com.lihaoyi" %%% "utest" % "0.6.5" % "test"
 )
 
 scalafmtOnCompile in ThisBuild := true

@@ -35,14 +35,15 @@ class SocketClient(
       val start = buffer.indexOf('{')
       val init = buffer.substring(start, buffer.length)
 
-      val next = init.indexOfSlice("Content-Length:")
+      val next = init.indexOfSlice("Content-")
+
       val msg =
         if (next == -1) init
         else init.substring(0, next)
 
       def trimBuffer() = {
         if (next == -1) buffer = ""
-        else buffer = buffer.substring(init.length + next, buffer.length)
+        else buffer = buffer.substring(start + msg.length, buffer.length)
       }
 
       try {
@@ -58,9 +59,9 @@ class SocketClient(
       } catch {
         case _: Throwable =>
           //not yet a valid json message
-          if (buffer != "" && !buffer.startsWith("Content-Length:")) {
+          if (buffer != "" && !buffer.startsWith("Content-")) {
             // trailing junk to throw away
-            val start = buffer.indexOfSlice("Content-Length:")
+            val start = buffer.indexOfSlice("Content-")
             buffer = buffer.substring(start, buffer.length)
             parseBuffer()
           }

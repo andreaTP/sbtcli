@@ -47,7 +47,7 @@ sealed trait Event {
   def print(): Unit
 }
 
-final case class Result(json: js.Dynamic) extends Event {
+final case class Result(val json: js.Dynamic) extends Event {
   def print(): Unit = {
     if (!js.isUndefined(json.result)) {
       CliLogger.logger.info("completed")
