@@ -42,6 +42,15 @@ final case class SettingQuery(setting: String) extends Command {
       ))
   }
 }
+final case object CancelRequest extends Command {
+  def serialize() = {
+    js.JSON.stringify(
+      onWire(
+        "sbt/cancelRequest",
+        js.Dynamic.literal()
+      ))
+  }
+}
 
 sealed trait Event {
   def print(): Unit
