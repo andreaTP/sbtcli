@@ -159,9 +159,12 @@ class SocketClient(
     }
   }
 
+  var lastSent: Option[String] = None
+
   def send(cmd: Command): Future[Event] = {
     val answer = Promise[Event]()
     val id = cmd.execId.toString
+    lastSent = Some(id)
     inFlight += (id -> answer)
     rawSend(cmd)
     answer.future

@@ -42,12 +42,12 @@ final case class SettingQuery(setting: String) extends Command {
       ))
   }
 }
-final case object CancelRequest extends Command {
+final case class CancelRequest(id: String) extends Command {
   def serialize() = {
     js.JSON.stringify(
       onWire(
         "sbt/cancelRequest",
-        js.Dynamic.literal()
+        js.Dynamic.literal("id" -> id)
       ))
   }
 }

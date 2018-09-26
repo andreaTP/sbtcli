@@ -45,17 +45,19 @@ object SbtCli extends App {
 
     // Typed interface is out-of-sync with github version and not working... :-S
     val readline = js.Dynamic.global.require("readline")
-    val rl = readline.createInterface(
-      js.Dynamic.literal(
-        "input" -> Node.process.stdin,
-        "output" -> Node.process.stdout,
-        // "completer" -> completerFunction,
-        "prompt" -> ">+> "
-      ))
 
     for {
       sbtClient <- init()
     } {
+
+      val rl = readline.createInterface(
+        js.Dynamic.literal(
+          "input" -> Node.process.stdin,
+          "output" -> Node.process.stdout,
+          // "completer" -> completerFunction,
+          "prompt" -> ">+> "
+        ))
+
       rl.prompt(true)
       rl.on(
           "line",
@@ -74,6 +76,24 @@ object SbtCli extends App {
             } yield {
               result.print()
               rl.prompt(true)
+            }
+          }
+        )
+        .on(
+          "SIGINT",
+          () => {
+            // pressed Ctrl-C
+            val lastCmd = sbtClient.lastSent
+            sbtClient.lastSent match {
+              case Some(lastId) =>
+                for {
+                  result <- sbtClient.send(CancelRequest(lastId))
+                } yield {
+                  result.print()
+                  rl.prompt(true)
+                }
+              case _ =>
+                CliLogger.logger.info(s"To exit type: `exit` + Enter")
             }
           }
         )
