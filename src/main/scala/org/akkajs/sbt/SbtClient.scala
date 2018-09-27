@@ -2,12 +2,23 @@ package org.akkajs.sbt
 
 import scala.scalajs.js
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.{global => ec}
 
 import com.definitelyscala.node.Node
 
-object SbtCli extends App {
+object SbtClient extends App {
+
+  /* Cherry-picked commands from 'sbt completions' */
+  val allCommands = Seq("clean",
+                        "compile",
+                        "deploy",
+                        "doc",
+                        "package",
+                        "publish",
+                        "run",
+                        "test",
+                        "testOnly")
 
   // Env variable to set the logging level of the CLI
   val LogLevelEnvVar = "SBTCLI_LOGLEVEL"
@@ -33,13 +44,6 @@ object SbtCli extends App {
   val argv = Node.process.argv
   CliLogger.logger.trace(s"Starting CLI with argv: $argv")
 
-  /*Temporary location for this function ... */
-  // TODO: completener to be completed
-  // val completerFunction: js.Function1[String, js.Array[_]] = (line) => {
-  //   val completions = js.Array[String]("...")
-  //   js.Array(completions, line)
-  // }
-
   if (argv.length <= 2) {
     // Interactive CLI
 
@@ -54,7 +58,7 @@ object SbtCli extends App {
         js.Dynamic.literal(
           "input" -> Node.process.stdin,
           "output" -> Node.process.stdout,
-          // "completer" -> completerFunction,
+          "completer" -> completerFunc,
           "prompt" -> ">+> "
         ))
 
@@ -106,22 +110,31 @@ object SbtCli extends App {
 
     argv.remove(0) // remove `node`
     argv.remove(0) // remove init script call
+
     for {
       sbtClient <- init()
     } yield {
+
       val commands =
-        (for { str <- argv } yield {
+        for { str <- argv } yield {
           val cmd = {
             if (str == "shutdown") "exit"
             else str
           }
           CliLogger.logger.info(s"Executing command: $cmd")
+          if (!allCommands.contains(cmd)) {
+            val hits = allCommands.filter(c => c.startsWith(cmd))
+            val hitsStr =
+              if (hits.nonEmpty) hits.mkString(",")
+              else allCommands.mkString(",")
+            CliLogger.logger.warn(s"Do you mean $hitsStr?")
+          }
           for {
             result <- sbtClient.send(ExecCommand(cmd))
           } yield {
             result.print()
           }
-        })
+        }
       for {
         _ <- Future.sequence(commands.toSeq)
       } yield {
@@ -157,5 +170,11 @@ object SbtCli extends App {
     } yield {
       sbtClient
     }
+  }
+
+  private val completerFunc: js.Function1[String, js.Array[_]] = line => {
+    val completions = js.Array[String](allCommands: _*)
+    val hits = completions.filter(c => c.startsWith(line.toString))
+    js.Array(if (hits.length > 0) hits else completions, line)
   }
 }
