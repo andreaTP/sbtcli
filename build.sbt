@@ -24,6 +24,7 @@ testFrameworks += new TestFramework("utest.runner.Framework")
 libraryDependencies ++= Seq(
   "org.wvlet.airframe" %%% "airframe-log" % "0.65", 
   "com.definitelyscala" %%% "scala-js-node" % "1.0.1",
+  "com.github.alexarchambault" %%% "case-app" % "2.0.0-M3",
   "com.lihaoyi" %%% "utest" % "0.6.5" % "test"
 )
 
@@ -34,6 +35,7 @@ val shebang = "#!/usr/bin/env node"
 val prelude = """'use strict';
                  |global.require = require;
                  |global.fs = require('fs');
+                 |global.path = require('path');
                  |global.child_process = require('child_process');
                  |global.net = require('net');
                  |global.readline = require('readline');

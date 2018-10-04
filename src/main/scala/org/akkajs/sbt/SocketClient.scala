@@ -136,7 +136,7 @@ class SocketClient(
                 lines.zipWithIndex.foreach {
                   case (line, i) =>
                     val startCol =
-                      if (i == 0) colStart - 1
+                      if (i == 0) colStart // - 1
                       else 0
 
                     val ls = wvlet.log.LogSource(
