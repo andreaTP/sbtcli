@@ -1,5 +1,7 @@
 # Sbtcli
 
+[![NPM](https://nodei.co/npm/sbtcli-poc.png?compact=true)](https://nodei.co/npm/sbtcli-poc/)
+
 An *experimental* CLI on Node for Sbt `1.2.X` written in Scala.js.
 
 Feel free to start using it and report any bug, feature request, please note that it's still under hard development.
