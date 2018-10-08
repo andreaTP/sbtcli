@@ -70,7 +70,7 @@ class SocketClient(
   }
 
   def onMessage(msg: js.Dynamic) = {
-    CliLogger.logger.trace(s"message: ${js.JSON.stringify(msg)}")
+    CliLogger.logger.trace(s"receive: ${js.JSON.stringify(msg)}")
     val id = msg.id.toString
 
     inFlight.get(id) match {
@@ -172,6 +172,7 @@ class SocketClient(
 
   private def rawSend(cmd: Command) = {
     val serialized = cmd.serialize()
+    CliLogger.logger.trace(s"send: ${serialized}")
     val str = s"Content-Length: ${serialized.length + 2}\r\n\r\n$serialized\r\n"
     sock.write(Buffer.from(str, "UTF-8"))
   }

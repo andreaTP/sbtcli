@@ -1,0 +1,34 @@
+language: scala
+
+os:
+  - linux
+  - osx
+
+scala:
+  - "2.12.7"
+
+jdk: oraclejdk8
+
+env:
+  - TRAVIS_NODE_VERSION="10.10.0"
+
+install:
+  - source travis/setNodeVersion.sh
+
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt
+
+script:
+  - sbt ++$TRAVIS_SCALA_VERSION test deploy
+  # re-using current sbtcli version to recompile the current scala project
+  - ./bin/sbtcli --ll trace clean compile
+  # Tricks to avoid unnecessary cache updates, from
+  # http://www.scala-sbt.org/0.13/docs/Travis-CI-with-sbt.html
+  - find $HOME/.sbt -name "*.lock" | xargs rm
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot/

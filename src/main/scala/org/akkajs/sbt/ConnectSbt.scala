@@ -106,7 +106,10 @@ object ConnectSbt {
 
     Child_process.spawn(
       cmd,
-      js.Array[String](),
+      js.Array[String](
+        // I take total control over output color and formatting
+        "-Dsbt.log.noformat=true"
+      ),
       spawnOptions
     )
   }

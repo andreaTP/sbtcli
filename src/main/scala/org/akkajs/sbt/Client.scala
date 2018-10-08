@@ -10,84 +10,13 @@ import com.definitelyscala.node.Node
 import com.definitelyscala.node.fs.{Fs, Stats}
 import com.definitelyscala.node.path.Path
 
-object SbtCli extends App {
+import LightColors._
 
-  // Env variable to set the logging level of the CLI
-  val LogLevelEnvVar = "SBTCLI_LOGLEVEL"
+object SbtCli extends App {
 
   val argv = Node.process.argv
 
-  /*Temporary location for this function ... */
-  // TODO: completener to be completed
-  // val completerFunction: js.Function1[String, js.Array[_]] = (line) => {
-  //   val completions = js.Array[String]("...")
-  //   js.Array(completions, line)
-  // }
-
-  argv.remove(0) // remove `node`
-  argv.remove(0) // remove init script call
-
-  import caseapp._
-
-  val version = Try {
-    js.Dynamic.global.require("../package.json").version.toString
-  }.toOption.getOrElse("")
-
-  val logLevelFallback = Try {
-    val ll =
-      Node.process.env
-        .asInstanceOf[js.Dynamic]
-        .selectDynamic(LogLevelEnvVar)
-
-    if (!js.isUndefined(ll)) {
-      wvlet.log.LogLevel(ll.toString)
-      ll.toString
-    } else throw new Exception("log level env var not defined or not valid")
-  }.toOption.getOrElse("info")
-
-  @AppName("SbtCli")
-  @AppVersion(version)
-  @ProgName("sbtcli")
-  case class CmdLineOptions(
-      @ExtraName("c")
-      @HelpMessage(
-        "[experimental] Re-trigger the command on changes to .scala or .java files (only non-interactive mode)")
-      continue: Boolean = false,
-      @ExtraName("ll")
-      @HelpMessage("Log level to be used")
-      logLevel: String = logLevelFallback
-  )
-
-  def errorExit() = {
-    Node.process.exit(-1)
-    throw new Exception("unreachable")
-  }
-
-  def cmdLineParsingError() = {
-    CliLogger.logger.info("Not a valid command")
-    CliLogger.logger.info(CaseApp.helpMessage[CmdLineOptions])
-    errorExit()
-  }
-
-  val (options, sbtCmds): (CmdLineOptions, Seq[String]) = {
-    CaseApp
-      .detailedParseWithHelp[CmdLineOptions](argv.toSeq) match {
-      case Right((parsed, help, usage, args)) =>
-        if (usage) {
-          CliLogger.logger.info(CaseApp.usageMessage[CmdLineOptions])
-          errorExit()
-        } else if (help) {
-          CliLogger.logger.info(CaseApp.helpMessage[CmdLineOptions])
-          errorExit()
-        } else {
-          parsed match {
-            case Right(opts) => (opts, args.all)
-            case Left(_)     => cmdLineParsingError()
-          }
-        }
-      case Left(_) => cmdLineParsingError()
-    }
-  }
+  val (options, sbtCmds) = Default.parseCmdLine(argv)
 
   val logLevel = wvlet.log.LogLevel(options.logLevel)
 
@@ -110,8 +39,8 @@ object SbtCli extends App {
         js.Dynamic.literal(
           "input" -> Node.process.stdin,
           "output" -> Node.process.stdout,
-          // "completer" -> completerFunction,
-          "prompt" -> ">+> "
+          // "completer" -> completerFunction, TO BE completed
+          "prompt" -> (s"$LIGHT_CYAN>+> " + Console.RESET)
         ))
 
       rl.prompt(true)

@@ -5,7 +5,7 @@ import wvlet.log._
 object CustomSimpleLogFormatter extends LogFormatter {
   import LogFormatter._
   override def formatLog(r: LogRecord): String = {
-    val log = s"[${withColor(Console.WHITE, r.leafLoggerName)}/${highlightLog(
+    val log = Console.RESET + s"[${withColor(Console.WHITE, r.leafLoggerName)}/${highlightLog(
       r.level,
       r.level.name)}] ${highlightLog(r.level, r.getMessage)}"
     appendStackTrace(log, r)
@@ -36,17 +36,41 @@ object SbtLogger {
     logger.log(LogLevel.values(level), fakeLogSource, msg)
 }
 
+object LightColors {
+  val LIGHT_CYAN = "\u001b[96m"
+
+  def lighterHighlightLog(level: LogLevel, message: String): String = {
+    import wvlet.log.LogLevel.{DEBUG, ERROR, INFO, TRACE, WARN}
+    val color = level match {
+      case ERROR => "\u001b[91m"
+      case WARN  => "\u001b[93m"
+      case INFO  => "\u001b[96m"
+      case DEBUG => "\u001b[92m"
+      case TRACE => "\u001b[95m"
+      case _     => Console.RESET
+    }
+    import wvlet.log.LogFormatter.withColor
+    withColor(color, message)
+  }
+}
+
 object CustomErrorLogFormatter extends LogFormatter {
   import LogFormatter._
+  import LightColors._
+
   override def formatLog(r: LogRecord): String = {
     val loc =
       r.source
-        .map(source => s" ${withColor(Console.BLUE, s"- ${source.fileLoc}")}")
+        .map(source => s"${withColor(LIGHT_CYAN, s"${source.fileLoc}")}")
         .getOrElse("")
 
     val logTag = highlightLog(r.level, r.level.name)
+
     val log =
-      f"[${withColor(Console.WHITE, r.leafLoggerName)}/${logTag}%14s]${loc}\n${highlightLog(r.level, r.getMessage)}"
+      f"[${withColor(Console.WHITE, r.leafLoggerName)}/${logTag}%14s] ${lighterHighlightLog(
+        r.level,
+        r.getMessage)}\n${loc}"
+
     appendStackTrace(log, r)
   }
 }
@@ -65,6 +89,7 @@ object ErrorLogger {
 
 object CustomCodeLogFormatter extends LogFormatter {
   import LogFormatter._
+  import LightColors._
 
   override def formatLog(r: LogRecord): String = {
     val s = r.source.get
@@ -76,9 +101,9 @@ object CustomCodeLogFormatter extends LogFormatter {
     val endLine = msg.drop(startCol - 1)
 
     val log =
-      f"${withColor(Console.BLUE, s.line.toString)}:${withColor(
+      f"${withColor(LIGHT_CYAN, s.line.toString)}:${withColor(
         Console.WHITE,
-        startLine)}${highlightLog(r.level, endLine)}"
+        startLine)}${lighterHighlightLog(r.level, endLine)}"
     appendStackTrace(log, r)
   }
 }
