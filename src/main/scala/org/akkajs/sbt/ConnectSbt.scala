@@ -26,6 +26,49 @@ object ConnectSbt {
     )
   }
 
+  // Sligthly modifyed from
+  // https://github.com/semver/semver/issues/232
+  val versionRegExp =
+    """^([1-9]\d*)\.([2-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"""
+
+  def checkSbtVersion(versionfile: String): Future[Unit] = {
+    val ret = Promise[Unit]()
+    Fs.readFile(
+      versionfile,
+      (err, content) => {
+        try {
+          val sbtVersion =
+            content
+              .toString()
+              .split("\n")
+              .find(_.contains("sbt.version"))
+              .map(
+                str =>
+                  str
+                    .replace("sbt.version", "")
+                    .replace("=", "")
+                    .trim())
+
+          val correct =
+            versionRegExp.r.pattern.matcher(sbtVersion.get).matches()
+
+          if (correct) {
+            ret.trySuccess(())
+          } else {
+            CliLogger.logger.error("sbtcli works only with sbt version > 1.2.X")
+            Node.process.exit(-1)
+          }
+        } catch {
+          case _: Throwable =>
+            ret.trySuccess(())
+            CliLogger.logger.warn(
+              "Cannot determine the version of sbt. Proceed at your own risk.")
+        }
+      }
+    )
+    ret.future
+  }
+
   def connect(portfile: String,
               res: Promise[Socket] = Promise[Socket]()): Future[Socket] = {
     Fs.readFile(
@@ -53,18 +96,21 @@ object ConnectSbt {
     res.future
   }
 
-  def startServerIfNeeded(portfile: String): Future[Boolean] = {
+  def startServerIfNeeded(portfile: String,
+                          startupTimeout: Int): Future[Boolean] = {
     val startedProm = Promise[Boolean]
     Fs.exists(portfile, (exists) => {
       if (exists)
         startedProm.success(true)
       else
-        forkServer(portfile, startedProm)
+        forkServer(portfile, startedProm, startupTimeout)
     })
     startedProm.future
   }
 
-  def forkServer(portfile: String, startedProm: Promise[Boolean]) = {
+  def forkServer(portfile: String,
+                 startedProm: Promise[Boolean],
+                 startupTimeout: Int) = {
     CliLogger.logger.info("Forking and starting an sbt server")
 
     val cmd = "sbt"
@@ -93,24 +139,31 @@ object ConnectSbt {
       500
     )
 
-    timeout = Node.setTimeout(() => {
-      CliLogger.logger.error(s"timeout. $portfile is not found.")
-      if (check != null)
-        Node.clearInterval(check)
-      startedProm.success(false)
-    }, 90000)
-
     val spawnOptions =
       js.Dynamic.literal().asInstanceOf[SpawnOptions]
     spawnOptions.detached = true
+    spawnOptions.stdio = "ignore"
 
-    Child_process.spawn(
+    val sbtProcess = Child_process.spawn(
       cmd,
       js.Array[String](
         // I take total control over output color and formatting
         "-Dsbt.log.noformat=true"
       ),
       spawnOptions
+    )
+
+    sbtProcess.unref()
+
+    timeout = Node.setTimeout(
+      () => {
+        CliLogger.logger.error(s"timeout waiting for server.")
+        if (check != null)
+          Node.clearInterval(check)
+
+        startedProm.success(false)
+      },
+      startupTimeout
     )
   }
 }

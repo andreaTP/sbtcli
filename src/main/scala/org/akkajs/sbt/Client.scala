@@ -32,7 +32,7 @@ object SbtCli extends App {
     val readline = js.Dynamic.global.require("readline")
 
     for {
-      sbtClient <- init()
+      sbtClient <- init(options.startupTimeout)
     } {
 
       val rl = readline.createInterface(
@@ -91,7 +91,7 @@ object SbtCli extends App {
     // Non-interactive mode
 
     for {
-      sbtClient <- init()
+      sbtClient <- init(options.startupTimeout)
     } yield {
       def commands =
         (for { str <- sbtCmds } yield {
@@ -199,18 +199,20 @@ object SbtCli extends App {
     }
   }
 
-  def init(): Future[SocketClient] = {
+  def init(startupTimeout: Int): Future[SocketClient] = {
     val baseDir = Node.process.cwd()
+    val versionfile = s"$baseDir/project/build.properties"
     val portfile = s"$baseDir/project/target/active.json"
 
-    for {
-      started <- ConnectSbt.startServerIfNeeded(portfile)
+    (for {
+      _ <- ConnectSbt.checkSbtVersion(versionfile)
+      started <- ConnectSbt.startServerIfNeeded(portfile, startupTimeout)
       if started == true
       sock <- ConnectSbt.connect(portfile).recoverWith {
-        // retry after cleaning active.jsno
+        // retry after cleaning active.json
         case _ =>
           for {
-            started <- ConnectSbt.startServerIfNeeded(portfile)
+            started <- ConnectSbt.startServerIfNeeded(portfile, startupTimeout)
             if started == true
             s <- ConnectSbt.connect(portfile)
           } yield { s }
@@ -225,6 +227,10 @@ object SbtCli extends App {
       init <- sbtClient.send(InitCommand())
     } yield {
       sbtClient
+    }).recover {
+      case _ =>
+        Node.process.exit(-1)
+        throw new Exception("unreachable")
     }
   }
 }
