@@ -1,6 +1,8 @@
 
 tab completion -> waiting for PR on Sbt
 
-firing a good error when sbt has not the right version --> not sure how to reliably do that
-
-check timeouts when sbt have to be downloaded...
+command line completions:
+https://iridakos.com/tutorials/2018/03/01/bash-programmable-completion-tutorial.html
+https://www.tldp.org/LDP/abs/html/tabexpansion.html
+http://blogs.perl.org/users/perlancar/2014/11/comparing-programmable-tab-completion-in-bash-zsh-tcsh-and-fish.html
+https://picocli.info/autocomplete.html

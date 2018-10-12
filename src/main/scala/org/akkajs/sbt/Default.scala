@@ -37,7 +37,10 @@ object Default {
       continue: Boolean = false,
       @ExtraName("ll")
       @HelpMessage("Log level to be used")
-      logLevel: String = logLevelFallback
+      logLevel: String = logLevelFallback,
+      @ExtraName("st")
+      @HelpMessage("Hard Sbt start timeout (in ms)")
+      startupTimeout: Int = 90000,
   )
 
   def errorExit() = {
