@@ -1,7 +1,7 @@
 # Sbtcli
 
 [![NPM](https://nodei.co/npm/sbtcli-poc.png?compact=true)](https://nodei.co/npm/sbtcli-poc/)
-[![Build Status](https://travis-ci.org/andreaTP/sbtcli.svg?branch=master)](https://travis-ci.org/andreaTP/sbtcli)
+[![Build Status](https://travis-ci.org/andreaTP/sbtcli.svg?branch=master)](https://travis-ci.org/andreaTP/sbtcli) [![Join the chat at https://gitter.im/andreaTP/sbtcli](https://badges.gitter.im/andreaTP/sbtcli.svg)](https://gitter.im/andreaTP/sbtcli?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 An *experimental* CLI on Node for Sbt `1.2.X` written in Scala.js.
 
