@@ -51,9 +51,26 @@ final case class CancelRequest(id: String) extends Command {
       ))
   }
 }
+final case class CompletionRequest(query: String) extends Command {
+  def serialize() = {
+    js.JSON.stringify(
+      onWire(
+        "sbt/completion",
+        js.Dynamic.literal("query" -> query)
+      ))
+  }
+}
 
 sealed trait Event {
+  val json: js.Dynamic
   def print(): Unit
+  def completions(): js.Array[String] = {
+    try {
+      json.result.items.asInstanceOf[js.Array[String]]
+    } catch {
+      case _: Throwable => js.Array[String]()
+    }
+  }
 }
 
 final case class Result(val json: js.Dynamic) extends Event {

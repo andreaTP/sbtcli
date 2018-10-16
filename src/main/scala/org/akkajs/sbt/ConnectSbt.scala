@@ -26,10 +26,15 @@ object ConnectSbt {
     )
   }
 
+  var detectedSbtVersion: String = "unknown"
+
   // Sligthly modifyed from
   // https://github.com/semver/semver/issues/232
-  val versionRegExp =
-    """^([1-9]\d*)\.([2-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"""
+  def versionRegExp(minMinor: Int = 2) =
+    """^([1-9]\d*)\.([""" + minMinor + """-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"""
+
+  def checkCurrentSbtVersion(minMinor: Int): Boolean =
+    versionRegExp(minMinor).r.pattern.matcher(detectedSbtVersion).matches()
 
   def checkSbtVersion(versionfile: String): Future[Unit] = {
     val ret = Promise[Unit]()
@@ -41,7 +46,7 @@ object ConnectSbt {
             content
               .toString()
               .split("\n")
-              .find(_.contains("sbt.version"))
+              .find(_.trim().startsWith("sbt.version"))
               .map(
                 str =>
                   str
@@ -49,8 +54,10 @@ object ConnectSbt {
                     .replace("=", "")
                     .trim())
 
+          detectedSbtVersion = sbtVersion.get
+
           val correct =
-            versionRegExp.r.pattern.matcher(sbtVersion.get).matches()
+            versionRegExp().r.pattern.matcher(sbtVersion.get).matches()
 
           if (correct) {
             ret.trySuccess(())

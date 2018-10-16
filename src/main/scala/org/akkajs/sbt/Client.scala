@@ -33,13 +33,21 @@ object SbtCli extends App {
 
     for {
       sbtClient <- init(options.startupTimeout)
+      val completionAvailable = ConnectSbt.checkCurrentSbtVersion(3)
+      baseCompletions <- {
+        if (completionAvailable) sbtClient.send(CompletionRequest(""))
+        else
+          Future { new Result(js.Dynamic.literal()) } // TODO: have a static predefined list?
+      }
     } {
 
       val rl = readline.createInterface(
         js.Dynamic.literal(
           "input" -> Node.process.stdin,
           "output" -> Node.process.stdout,
-          // "completer" -> completerFunction, TO BE completed
+          "completer" -> completerFunction(completionAvailable,
+                                           sbtClient,
+                                           baseCompletions.completions()),
           "prompt" -> (s"$LIGHT_CYAN>+> " + Console.RESET)
         ))
 
@@ -198,6 +206,28 @@ object SbtCli extends App {
       }
     }
   }
+
+  type CompleterResult = js.Tuple2[js.Array[String], String]
+  def completerFunction(completionAvailable: Boolean,
+                        client: SocketClient,
+                        baseCompletions: js.Array[String] = js.Array())
+    : js.Function2[String, js.Function2[js.Any, CompleterResult, Unit], Unit] =
+    (line, callback) => {
+      // TODO: implement hamming distance in the fallback (or something similar)
+      def fallback() = callback(null, (baseCompletions, line))
+
+      if (completionAvailable)
+        for {
+          result <- client.send(CompletionRequest(line))
+        } yield {
+          // full autocomplete only after second TAB
+          // https://github.com/addaleax/node/commit/dca1f272a2f05043f1ad2bc61093d7ffbe3f2788
+          if (result.completions().size > 0)
+            callback(null, (result.completions(), line))
+          else
+            fallback()
+        } else fallback()
+    }
 
   def init(startupTimeout: Int): Future[SocketClient] = {
     val baseDir = Node.process.cwd()
