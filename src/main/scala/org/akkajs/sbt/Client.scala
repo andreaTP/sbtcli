@@ -213,8 +213,20 @@ object SbtCli extends App {
                         baseCompletions: js.Array[String] = js.Array())
     : js.Function2[String, js.Function2[js.Any, CompleterResult, Unit], Unit] =
     (line, callback) => {
-      // TODO: implement hamming distance in the fallback (or something similar)
-      def fallback() = callback(null, (baseCompletions, line))
+      def fallback() = {
+        CliLogger.logger.warn("No matches. Possible suggestions are:")
+
+        val topCompletions = baseCompletions
+          .filterNot(_.startsWith("ProjectRef"))
+          .map(x => (LongestCommonSeq(x, line), x))
+          .sortWith(_._1 > _._1)
+          .filter(_._1 > 0)
+          .take(20) // this can come from command line options
+          .map(_._2)
+          .sortWith(_.size < _.size)
+
+        callback(null, (topCompletions, line))
+      }
 
       if (completionAvailable)
         for {
