@@ -11,9 +11,7 @@ import com.definitelyscala.node.Buffer
 import com.definitelyscala.node.fs.Fs
 import com.definitelyscala.node.net.Socket
 
-class SocketClient(
-    sock: Socket
-) {
+class SocketClient(sock: Socket) {
 
   val cwd = Node.process.cwd()
 

@@ -1,6 +1,3 @@
-
-tab completion -> waiting for PR on Sbt
-
 command line completions:
 https://iridakos.com/tutorials/2018/03/01/bash-programmable-completion-tutorial.html
 https://www.tldp.org/LDP/abs/html/tabexpansion.html

@@ -163,6 +163,8 @@ object SbtCli extends App {
         }
       }
 
+      // file watch can be implemented registering a file watcher:
+      // https://github.com/scalacenter/bsp/blob/master/docs/bsp.md#register-file-watcher-request
       def watch(dir: String) = {
         Fs.watch(
           dir,
