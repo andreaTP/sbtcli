@@ -21,7 +21,7 @@ cache:
     - $HOME/.sbt
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION test deploy
+  - sbt -Dsbt.boot.properties=./project/boot.properties ++$TRAVIS_SCALA_VERSION test deploy
   # re-using current sbtcli version to recompile the current scala project
   - ./bin/sbtcli --ll trace clean compile
   # Tricks to avoid unnecessary cache updates, from
