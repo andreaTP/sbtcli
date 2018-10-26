@@ -7,8 +7,8 @@
     "sbtcli": "./bin/sbtcli"
   },
   "scripts": {
-    "build": "sbt -Dsbt.boot.properties=./project/boot.properties deploy -sbt-dir ./sbt",
-    "prepublish": "sbt -Dsbt.boot.properties=./project/boot.properties deploy -sbt-dir ./sbt",
+    "build": "sbt deploy",
+    "prepublish": "sbt deploy",
     "buildBinary": "(cd target/binary && pkg sbtcli.js)"
   },
   "keywords": [
