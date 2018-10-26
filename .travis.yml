@@ -21,7 +21,8 @@ cache:
     - $HOME/.sbt
 
 script:
-  - sbt -sbt-jar launcher-1.0.4.jar -Dsbt.boot.properties=./project/boot.properties ++$TRAVIS_SCALA_VERSION test deploy
+  - wget http://central.maven.org/maven2/org/scala-sbt/launcher/1.0.4/launcher-1.0.4.jar
+  - java -Xms512m -Xmx1536m -Xss2m -jar ./launcher-1.0.4.jar -Dsbt.boot.properties=./project/boot.properties ++$TRAVIS_SCALA_VERSION test deploy
   # re-using current sbtcli version to recompile the current scala project
   - ./bin/sbtcli --ll trace clean compile
   # Tricks to avoid unnecessary cache updates, from
