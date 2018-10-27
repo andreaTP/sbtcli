@@ -1,3 +1,5 @@
+make sbt command configurable by command line to make travis happy again
+
 command line completions:
 https://iridakos.com/tutorials/2018/03/01/bash-programmable-completion-tutorial.html
 https://www.tldp.org/LDP/abs/html/tabexpansion.html

@@ -41,6 +41,9 @@ object Default {
       @ExtraName("st")
       @HelpMessage("Hard Sbt start timeout (in ms)")
       startupTimeout: Int = 90000,
+      @ExtraName("sc")
+      @HelpMessage("Command to be used to launch sbt")
+      sbtCmd: String = "sbt",
   )
 
   def errorExit() = {

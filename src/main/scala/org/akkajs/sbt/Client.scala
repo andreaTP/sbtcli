@@ -32,7 +32,7 @@ object SbtCli extends App {
     val readline = js.Dynamic.global.require("readline")
 
     for {
-      sbtClient <- init(options.startupTimeout)
+      sbtClient <- init(options.startupTimeout, options.sbtCmd)
       val completionAvailable = ConnectSbt.checkCurrentSbtVersion(3)
       baseCompletions <- {
         if (completionAvailable) sbtClient.send(CompletionRequest(""))
@@ -99,7 +99,7 @@ object SbtCli extends App {
     // Non-interactive mode
 
     for {
-      sbtClient <- init(options.startupTimeout)
+      sbtClient <- init(options.startupTimeout, options.sbtCmd)
     } yield {
       def commands =
         (for { str <- sbtCmds } yield {
@@ -243,20 +243,22 @@ object SbtCli extends App {
         } else fallback()
     }
 
-  def init(startupTimeout: Int): Future[SocketClient] = {
+  def init(startupTimeout: Int, cmd: String): Future[SocketClient] = {
     val baseDir = Node.process.cwd()
     val versionfile = s"$baseDir/project/build.properties"
     val portfile = s"$baseDir/project/target/active.json"
 
     (for {
       _ <- ConnectSbt.checkSbtVersion(versionfile)
-      started <- ConnectSbt.startServerIfNeeded(portfile, startupTimeout)
+      started <- ConnectSbt.startServerIfNeeded(portfile, startupTimeout, cmd)
       if started == true
       sock <- ConnectSbt.connect(portfile).recoverWith {
         // retry after cleaning active.json
         case _ =>
           for {
-            started <- ConnectSbt.startServerIfNeeded(portfile, startupTimeout)
+            started <- ConnectSbt.startServerIfNeeded(portfile,
+                                                      startupTimeout,
+                                                      cmd)
             if started == true
             s <- ConnectSbt.connect(portfile)
           } yield { s }

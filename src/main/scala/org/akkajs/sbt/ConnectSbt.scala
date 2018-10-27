@@ -104,23 +104,28 @@ object ConnectSbt {
   }
 
   def startServerIfNeeded(portfile: String,
-                          startupTimeout: Int): Future[Boolean] = {
+                          startupTimeout: Int,
+                          cmd: String): Future[Boolean] = {
     val startedProm = Promise[Boolean]
     Fs.exists(portfile, (exists) => {
       if (exists)
         startedProm.success(true)
       else
-        forkServer(portfile, startedProm, startupTimeout)
+        forkServer(portfile, startedProm, startupTimeout, cmd)
     })
     startedProm.future
   }
 
   def forkServer(portfile: String,
                  startedProm: Promise[Boolean],
-                 startupTimeout: Int) = {
+                 startupTimeout: Int,
+                 cmd: String) = {
     CliLogger.logger.info("Forking and starting an sbt server")
 
-    val cmd = "sbt"
+    val cmds = cmd.split(' ')
+
+    val command = cmds(0)
+    val args = cmds.drop(1)
     var timeout: Timer = null
     var check: Timer = null
 
@@ -152,11 +157,11 @@ object ConnectSbt {
     spawnOptions.stdio = "ignore"
 
     val sbtProcess = Child_process.spawn(
-      cmd,
+      command,
       js.Array[String](
         // I take total control over output color and formatting
-        "-Dsbt.log.noformat=true"
-      ),
+        "-Dsbt.log.noformat=true",
+      ) ++ args,
       spawnOptions
     )
 
